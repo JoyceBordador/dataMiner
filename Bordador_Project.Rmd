@@ -1,0 +1,173 @@
+---
+title: "Airfare prices in India"
+output: html_notebook
+---
+
+INTRODUCTION:
+
+This project is about exploratory data analysis on airfare prices in India using 2019 dataset from “Ease My Trip” website. The objective is to get various meaningful information and assumptions from the said dataset. "Easemytrip' is an internet platform for booking flight tickets", hence it is a portal where potential passengers purchase their tickets, a good way to get passengers purchasing behavior.
+
+Through this project we can help the airline companies on their forecasting ticket pricing by giving them recommendation made from the EDA done on the dataset.
+
+
+DATA
+
+My dataset is from Kaggle's website, click link below: https://www.kaggle.com/datasets/jillanisofttech/flight-price-prediction-dataset
+
+Please see details below
+
+```{r}
+
+install.packages("readr")
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+
+```
+```{r}
+my_data <- read_csv("/Users/joycebordador/Desktop/DataScienceProjDataset.csv")
+```
+
+My data shows 13,354 rows and 11 columns(variables) as shown below.
+Each variable's name and data type is also listed, like Date_of_journey, Dep_Time,  and Price are numeric, while the rest are characters. We can also see that no faulty data types and mislabeled variables on the list since I got my dataset from Kaggle website.
+
+
+```{r}
+glimpse(my_data)
+```
+```{r}
+head(my_data)
+```
+An initial look at the summary below, aside fromt the data type, under the 'Price' variable shows more details like the min, max, mean and even the number of NAs in the said column, which is a total of 2671.
+
+```{r}
+summary(my_data)
+```
+However, upon further checking there is a string inconsistency in one variable, Destination. on this output, you can see that there are 2 Delhis, the New Delhi and the Delhi, which upon checking in just one and the same, hence I replaced New Delhi with Delhi in my dataframe.
+```{r}
+unique(my_data$Destination)
+```
+This table shows you an output of a cleaned 'Destination' variable.
+```{r}
+my_data["Destination"][my_data["Destination"] == "New Delhi"] <- "Delhi"
+my_data
+```
+
+
+```{r}
+unique(my_data$Destination)
+```
+
+I further checked my variables for inaccurate or mispelled values from my dataset.
+```{r}
+unique(my_data$Airline)
+```
+
+```{r}
+unique(my_data$Date_of_Journey)
+```
+
+Another data cleaning I did is this "Additional_Info" variable.
+If you can check below, ther are 2 No infos, same process, I replaced the "No info" with "No Info".  
+
+```{r}
+unique(my_data$Additional_Info)
+```
+```{r}
+my_data["Additional_Info"][my_data["Additional_Info"] == "No info"] <- "No Info"
+my_data
+
+```
+the string "No info" has been removed from this list.
+```{r}
+unique(my_data$Additional_Info)
+```
+EXPLORATORY DATA ANALYSIS
+
+
+The focus of this EDA is on the variable "Price", comparing with other variables in the dataset to find trends, patterns and answers to some assumptions.
+
+Price based on Dep_Time, here we wanted to see if the departure time and Airline have an impact on price. If a flight that departs early in the morning is much cheaper than the flight that departs late in the evening. By looking at the graph, it just confirmed that departure time does not have an influence in the ticket prices. Indian travelers has no preference in the time of departure and airline, as long as the flight ticket is cheap.
+
+```{r}
+ggplot(my_data, aes(x=Price, y=Dep_Time, color = Airline)) + geom_point()
+
+```
+
+Looking futher on the Airline versus the Price, we can see low cost carrier such as Air Asia, Air India, Indigo and Jet Airways dominate the Indian aerospace. Is just obvious that as the ticket price increases there will be less buyers, as shown in the graph below. Passengers still prefer cheap fares.
+```{r}
+ggplot(data_new, aes(x=Price, color = Airline)) + geom_histogram(fill="pink")
+```
+Apparently, low cost carrier Spicejet sells the cheapest fare among all low cost airlines but has the least number of plane seats sold in 2019. Meaning, Indian travelers does not only look for the lowest fare, but at the same time they opted for the best inflight service or experience offered, that these said low cost airlines have, enough to be known and sellable.  
+
+```{r}
+my_data %>% 
+    filter(!is.na(Airline)) %>% 
+    group_by(Price, Airline) %>% 
+    count()
+
+```
+The table below just show that Hyderabad is the famous destination of Indians travelers at the cheapest fare. While, Mumbai airport is preferred Origin airport of Indians. Depends on the route and the price that each airline is offering, there is still a probability that Indians prefers the low cost carrier flying on these airports.
+
+```{r}
+data_new<- my_data %>% 
+            filter(!is.na(Airline)) %>% 
+            group_by(Price, Airline, Destination, Source, Route) %>% 
+            count
+
+data_new
+```
+
+```{r}
+ggplot(data_new, aes(x=Price, y=Destination, color = Airline)) + geom_point()
+```
+The most sellable plane ticket is a flight that offers the cheapest non-stop flight which almost all low cost carrier are offering. If the flight has more than 1 stop, the higher is the ticket price will be.
+```{r}
+my_data%>% 
+    filter(!is.na(Total_Stops)) %>% 
+    group_by(Price, Total_Stops) %>% 
+    count()
+```
+```{r}
+ggplot(my_data, aes(x=Price, y=Airline, color = Total_Stops)) + geom_point()
+
+```
+For airlines to sell cheap fares, they give passengers some option, meaning if they want extra service or Add-Ons, passenger has an option to pay extra price per service or not. The table below shows the list of add-ons or extra service.
+The graph shows too many 'NO Info' hence making my assumptions less valuable. But the No-Meals and No-Checked Baggage somehow adds meaning to my assumption that add-ons did give passengers an option to pay less. Although purple color(No Info) shines brighter in my graph, If I will remove it, the No-Meals and No-checked baggage will emerge the brightest amongs the points. 
+```{r}
+my_data %>% 
+    filter(!is.na(Airline)) %>% 
+    group_by(Price, Airline, Additional_Info) %>% 
+    count
+
+```
+```{r}
+ggplot(my_data, aes(x=Price, y=Airline, color = Additional_Info)) + geom_point()
+```
+Airlines, Jet Airways and SpiceJet are offering add-ons that are appealing to the passengers. These low cost airlines dominate in the No-meal and No-checked baggage included in their plane ticket.
+```{r}
+my_data%>% 
+    filter(!is.na(Additional_Info)) %>% 
+    group_by(Airline, Additional_Info) %>% 
+    count()
+```
+
+CONCLUSION:
+
+* Non-stop flight is an important contributor in ticket pricing. 
+* The more stops added to a flight the higher is the ticket price.
+* Origin, Destination, and Departure time does not have an impact in the
+  airline ticket pricing.
+* Low cost carriers dominate Indian aerospace.
+* known as the best low cost carrier is more appealing to the Indians than  
+  another budget carrier offering the cheapest flight.
+* Add-Ons, on No-Meals and No-Checked Baggage included on passenger's plane
+  ticket is a better option for the passenger to pay less on airfare.
+
+
+Thank you.
+
+Joyce Bordador
+
+
